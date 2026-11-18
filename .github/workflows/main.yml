@@ -1,0 +1,25 @@
+name: Build Kamehameha
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Unpack and build
+        run: |
+          ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+          if [ -z "$ZIP_FILE" ]; then echo "No project zip found at repository root"; exit 1; fi
+          mkdir -p project
+          unzip -o -q "$ZIP_FILE" -d project
+          CI_SCRIPT="$(find project -name ci.sh -print -quit)"
+          if [ -z "$CI_SCRIPT" ]; then echo "No ci.sh found inside the project zip"; exit 1; fi
+          bash "$CI_SCRIPT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kamehameha-mod
+          path: out/*.jar
+          if-no-files-found: error
